@@ -1,0 +1,139 @@
+body {
+    animation: change-color 10s infinite alternate;
+}
+
+@keyframes change-color {
+    0% {
+        background-color: antiquewhite;
+    }
+
+    50% {
+        background-color: yellow;
+    }
+
+    100% {
+        background-color: aquamarine;
+    }
+}
+
+
+.title {
+    font-family: 'Courier New', Courier, monospace;
+    text-align: center;
+    margin: 80px auto;
+    animation: skew 3s infinite alternate;
+
+}
+
+@keyframes skew {
+    0% {
+        transform: skew(0deg, 0deg);
+    }
+
+    100% {
+        transform: skew(30deg, 20deg);
+    }
+}
+
+.square {
+    background-color: orangered;
+    width: 200px;
+    height: 200px;
+    border-radius: 20px;
+    margin: 50px auto;
+    transition: all 1s;
+}
+
+.square:hover {
+    background-color: greenyellow;
+    transform: rotate(30deg);
+}
+
+.button-div {
+    text-align: center;
+}
+
+
+.button {
+    color: white;
+    background-color: green;
+    padding: 15px;
+    margin: 50px auto;
+    border-radius: 10px;
+    text-decoration: none;
+    display: inline-block;
+    transition: all .5s;
+}
+
+.button:hover {
+    background-color: greenyellow;
+    color: black;
+    transform: scale(1.5);
+}
+
+.loading {
+
+    background-color: green;
+    animation: stretch 5s 3 normal;
+    width: 80vw;
+
+}
+
+
+@keyframes stretch {
+    0% {
+        width: 100px;
+    }
+
+    100% {
+        width: 80vw;
+    }
+}
+
+
+
+.circle {
+  width: 200px;
+  height: 200px;
+  background-color: red;
+    border-radius: 20px;
+    margin: 50px auto;
+  position: relative;
+  animation: myAnimation 4s 2s infinite; /* duration | delay | infinite loop */
+}
+
+@keyframes myAnimation {
+  0%   {background-color:red; left:0px; top:0px; border-radius:0%;}
+  25%  {background-color:orange; left:200px; top:0px; border-radius:25%;}
+  50%  {background-color:blue; left:200px; top:200px; border-radius:50%;}
+  75%  {background-color:green; left:0px; top:200px; border-radius:25%;}
+  100% {background-color:red; left:0px; top:0px; border-radius:0%;}
+}
+
+.triangle {
+  width: 0;
+  height: 0;
+  border-left: 50px solid transparent;
+  border-right: 50px solid transparent;
+  border-bottom: 100px solid red;
+  margin: 300px auto;
+  cursor: pointer;
+  transition: border-bottom 0.4s ease;
+}
+
+
+.triangle:focus {
+  outline: none;
+}
+
+
+.triangle:focus {
+  border-bottom: 100px solid blue;
+  animation: spin 1s linear infinite;
+}
+
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
