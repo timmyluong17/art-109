@@ -242,6 +242,12 @@ footer img {
     }
 }
 
+.social-links a {
+    text-decoration: none;
+}
+
+
+
 /* ~~~~~~~~~~~~~~~~~~~flex~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 .flex-container {
