@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TIMMY'S Clicker Test</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #05030f;
+    color: #fff;
+    font-family: 'Exo 2', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    cursor: default;
+  }
+
+  /* STARS */
+  #stars-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* ---- START SCREEN ---- */
+  #start-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+  }
+
+  .ellipse-glow {
+    position: absolute;
+    width: 520px;
+    height: 180px;
+    background: radial-gradient(ellipse, rgba(80,40,160,0.45) 0%, transparent 70%);
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+
+  .art-label {
+    font-family: 'Orbitron', monospace;
+    font-size: 13px;
+    letter-spacing: 4px;
+    color: #a07de0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .art-label::before, .art-label::after {
+    content: '✦';
+    font-size: 11px;
+  }
+
+  .main-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(48px, 8vw, 88px);
+    font-weight: 900;
+    color: #e8dcff;
+    text-align: center;
+    line-height: 1;
+    position: relative;
+    letter-spacing: 2px;
+  }
+  .main-title span {
+    display: block;
+    font-size: clamp(36px, 6vw, 68px);
+    font-weight: 400;
+    color: #c8b8f8;
+  }
+
+  .divider {
+    width: 340px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(160,125,224,0.5), transparent);
+    position: relative;
+  }
+
+  .subtitle {
+    font-size: 16px;
+    color: #b0a0d8;
+    letter-spacing: 1px;
+    font-weight: 300;
+    position: relative;
+  }
+
+  .one-chance-badge {
+    background: rgba(80,50,140,0.4);
+    border: 1px solid rgba(160,120,220,0.3);
+    border-radius: 20px;
+    padding: 7px 22px;
+    font-size: 13px;
+    color: #c0a8f0;
+    letter-spacing: 1px;
+    font-weight: 300;
+    position: relative;
+  }
+
+  #start-btn {
+    position: relative;
+    margin-top: 10px;
+    padding: 18px 80px;
+    background: linear-gradient(135deg, #5a30b0, #7b45d8, #5a30b0);
+    border: none;
+    border-radius: 6px;
+    font-family: 'Orbitron', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: #fff;
+    cursor: pointer;
+    transition: transform 0.12s, box-shadow 0.12s;
+    box-shadow: 0 0 30px rgba(120,70,220,0.4);
+  }
+  #start-btn:hover {
+    transform: scale(1.04);
+    box-shadow: 0 0 50px rgba(140,90,240,0.6);
+  }
+  #start-btn:active { transform: scale(0.98); }
+
+  /* ---- GAME SCREEN ---- */
+  #game-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 9;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+  }
+
+  #game-header {
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: #7060a0;
+    text-align: center;
+  }
+
+  #health-bar-wrap {
+    width: 380px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  #health-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #9080c0;
+    letter-spacing: 1px;
+  }
+  #health-bar-bg {
+    width: 100%;
+    height: 8px;
+    background: rgba(80,50,140,0.3);
+    border-radius: 4px;
+    border: 1px solid rgba(120,80,200,0.25);
+    overflow: hidden;
+  }
+  #health-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #7b45d8, #a070ff);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+    width: 100%;
+  }
+
+  /* THE OBJECT */
+  #object-wrap {
+    position: relative;
+    width: 280px;
+    height: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  #object-svg {
+    width: 100%;
+    height: 100%;
+    transition: transform 0.08s;
+  }
+  #object-wrap:active #object-svg { transform: scale(0.93); }
+
+  #click-count {
+    font-family: 'Orbitron', monospace;
+    font-size: 32px;
+    font-weight: 700;
+    color: #d0b8ff;
+    letter-spacing: 2px;
+    text-align: center;
+    text-shadow: 0 0 20px rgba(180,140,255,0.4);
+  }
+  #click-count small {
+    display: block;
+    font-size: 11px;
+    font-weight: 400;
+    color: #7060a0;
+    letter-spacing: 3px;
+    margin-top: 4px;
+  }
+
+  #status-msg {
+    font-size: 13px;
+    color: #c0a8f0;
+    letter-spacing: 1px;
+    text-align: center;
+    min-height: 20px;
+    font-style: italic;
+    opacity: 0.8;
+  }
+
+  /* GLITCH events */
+  .glitch-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    pointer-events: none;
+    display: none;
+  }
+
+  /* CLICK PARTICLES */
+  .particle {
+    position: fixed;
+    pointer-events: none;
+    font-family: 'Orbitron', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: #c090ff;
+    z-index: 100;
+    animation: floatUp 0.7s ease-out forwards;
+  }
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-50px) scale(0.5); }
+  }
+
+  /* GAME OVER */
+  #gameover-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    background: rgba(5,3,15,0.92);
+  }
+  #gameover-screen h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: 52px;
+    font-weight: 900;
+    color: #ff6060;
+    letter-spacing: 4px;
+    animation: flicker 2s infinite;
+  }
+  @keyframes flicker {
+    0%,100%{opacity:1} 92%{opacity:1} 93%{opacity:0.3} 94%{opacity:1} 97%{opacity:1} 98%{opacity:0.4} 99%{opacity:1}
+  }
+  #final-score {
+    font-family: 'Orbitron', monospace;
+    font-size: 22px;
+    color: #a080d8;
+    letter-spacing: 2px;
+  }
+  #gameover-screen p {
+    font-size: 14px;
+    color: #7060a0;
+    letter-spacing: 1px;
+    font-style: italic;
+    max-width: 320px;
+    text-align: center;
+  }
+  #restart-btn {
+    padding: 14px 50px;
+    background: linear-gradient(135deg, #3a1878, #5a30b0);
+    border: 1px solid rgba(160,120,220,0.4);
+    border-radius: 6px;
+    font-family: 'Orbitron', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: #d0b8ff;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 10px;
+  }
+  #restart-btn:hover { background: linear-gradient(135deg, #5a30b0, #7b45d8); box-shadow: 0 0 30px rgba(120,70,220,0.4); }
+
+  /* EVENT SIDE PANEL */
+  #event-panel {
+    position: fixed;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 15;
+    width: 110px;
+  }
+  #panel-label {
+    font-family: 'Orbitron', monospace;
+    font-size: 8px;
+    letter-spacing: 3px;
+    color: #403060;
+    text-align: center;
+    margin-bottom: 2px;
+  }
+  .ev-tile {
+    background: rgba(14,7,36,0.7);
+    border: 1px solid rgba(100,60,180,0.18);
+    border-radius: 12px;
+    padding: 8px 6px 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    opacity: 0.28;
+    transition: opacity 0.35s, border-color 0.35s, box-shadow 0.35s;
+  }
+  .ev-tile.active {
+    opacity: 1;
+    border-color: rgba(200,150,255,0.65);
+    box-shadow: 0 0 20px rgba(160,100,255,0.28);
+    animation: tilePop 0.38s ease;
+  }
+  @keyframes tilePop {
+    0%{transform:scale(1)} 45%{transform:scale(1.08)} 100%{transform:scale(1)}
+  }
+  .ev-tile canvas { display: block; }
+  .ev-tile-label {
+    font-family: 'Orbitron', monospace;
+    font-size: 7.5px;
+    letter-spacing: 1px;
+    color: #7060a0;
+    text-align: center;
+    text-transform: uppercase;
+    line-height: 1.3;
+  }
+  .ev-tile.active .ev-tile-label { color: #c8a8ff; }
+
+  #goal-bar-wrap {
+    width: 380px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: -8px;
+  }
+  #goal-bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #6050a0;
+    letter-spacing: 1px;
+    font-family: 'Orbitron', monospace;
+  }
+  #goal-bar-bg {
+    width: 100%;
+    height: 5px;
+    background: rgba(60,40,100,0.3);
+    border-radius: 3px;
+    border: 1px solid rgba(100,70,180,0.2);
+    overflow: hidden;
+  }
+  #goal-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #4060c0, #80c0ff);
+    border-radius: 3px;
+    transition: width 0.2s ease;
+  }
+  #winscreen {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: rgba(5,3,15,0.93);
+  }
+  @keyframes winPulse {
+    0%,100%{text-shadow:0 0 20px rgba(160,255,100,0.4)} 50%{text-shadow:0 0 50px rgba(160,255,100,0.9)}
+  }
+
+  /* RANDOM EVENT BANNER */
+  #event-banner {
+    position: fixed;
+    top: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(40,10,80,0.9);
+    border: 1px solid rgba(200,150,255,0.4);
+    border-radius: 8px;
+    padding: 10px 24px;
+    font-family: 'Orbitron', monospace;
+    font-size: 13px;
+    color: #e0c8ff;
+    letter-spacing: 2px;
+    z-index: 60;
+    display: none;
+    white-space: nowrap;
+    animation: slideDown 0.3s ease;
+  }
+  @keyframes slideDown { from{transform: translateX(-50%) translateY(-20px); opacity:0} to{transform: translateX(-50%) translateY(0); opacity:1} }
+</style>
+</head>
+<body>
+
+<canvas id="stars-canvas"></canvas>
+<canvas id="glitch-canvas" style="position:fixed;inset:0;z-index:55;pointer-events:none;display:none;"></canvas>
+
+<!-- START SCREEN -->
+<div id="start-screen">
+  <div class="ellipse-glow"></div>
+  <div class="art-label">ART 109</div>
+  <div class="main-title">TIMMY'S<span>Clicker Test</span></div>
+  <div class="divider"></div>
+  <div class="subtitle">Can you keep the object alive?</div>
+  <div class="one-chance-badge">One chance</div>
+  <button id="start-btn" onclick="startGame()">START</button>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="game-screen">
+  <div id="game-header">✦ ART 109 — AUTOPOIESIS ✦</div>
+
+  <div id="health-bar-wrap">
+    <div id="health-label">
+      <span>INTEGRITY</span>
+      <span id="health-pct">100%</span>
+    </div>
+    <div id="health-bar-bg">
+      <div id="health-bar"></div>
+    </div>
+  </div>
+
+  <div id="object-wrap" onclick="handleClick(event)">
+    <svg id="object-svg" viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">
+      <!-- Outer ring -->
+      <circle cx="120" cy="120" r="108" fill="none" stroke="rgba(150,100,255,0.25)" stroke-width="1"/>
+      <circle cx="120" cy="120" r="90" fill="none" stroke="rgba(150,100,255,0.15)" stroke-width="0.5"/>
+      <!-- Main body -->
+      <circle id="obj-body" cx="120" cy="120" r="80" fill="rgba(60,30,120,0.7)" stroke="rgba(180,130,255,0.6)" stroke-width="1.5"/>
+      <!-- Inner glow -->
+      <circle cx="120" cy="120" r="60" fill="rgba(100,60,200,0.2)"/>
+      <circle cx="120" cy="120" r="40" fill="rgba(130,80,240,0.25)"/>
+      <circle cx="120" cy="120" r="22" fill="rgba(160,110,255,0.35)"/>
+      <!-- Highlight -->
+      <ellipse cx="100" cy="96" rx="16" ry="10" fill="rgba(220,200,255,0.12)" transform="rotate(-30 100 96)"/>
+      <!-- Decay cracks group (hidden by default) -->
+      <g id="crack-group" opacity="0">
+        <line x1="120" y1="40" x2="105" y2="80" stroke="rgba(255,100,100,0.6)" stroke-width="1"/>
+        <line x1="160" y1="70" x2="135" y2="110" stroke="rgba(255,100,100,0.5)" stroke-width="0.8"/>
+        <line x1="80" y1="150" x2="115" y2="130" stroke="rgba(255,100,100,0.5)" stroke-width="0.8"/>
+        <line x1="140" y1="175" x2="125" y2="148" stroke="rgba(255,100,100,0.4)" stroke-width="0.7"/>
+      </g>
+      <!-- Orbit dots -->
+      <g id="orbit-dots">
+        <circle cx="120" cy="24" r="3" fill="rgba(180,140,255,0.7)"/>
+        <circle cx="216" cy="120" r="2" fill="rgba(180,140,255,0.5)"/>
+        <circle cx="120" cy="216" r="2.5" fill="rgba(180,140,255,0.6)"/>
+        <circle cx="24" cy="120" r="2" fill="rgba(180,140,255,0.4)"/>
+      </g>
+    </svg>
+  </div>
+
+  <div id="click-count">0<small>CLICKS / 300</small></div>
+  <div id="goal-bar-wrap">
+    <div id="goal-bar-label">
+      <span>GOAL</span><span>300 clicks</span>
+    </div>
+    <div id="goal-bar-bg"><div id="goal-bar"></div></div>
+  </div>
+  <div id="status-msg">Click the object to keep it alive...</div>
+</div>
+
+<!-- GAME OVER SCREEN -->
+<div id="gameover-screen">
+  <h1>DISSOLVED</h1>
+  <div id="final-score">0 clicks</div>
+  <p>The object could not sustain itself without your presence.</p>
+  <div style="font-size:12px; color:#503880; letter-spacing:2px; font-family:'Orbitron',monospace; margin-top:4px;">ONE CHANCE — IT IS GONE</div>
+  <button id="restart-btn" onclick="retryGame()">↺ RETRY</button>
+</div>
+
+<!-- WIN SCREEN -->
+<div id="winscreen">
+  <div style="font-family:'Orbitron',monospace;font-size:11px;letter-spacing:4px;color:#a070d0;margin-bottom:8px;">✦ ART 109 ✦</div>
+  <h1 style="font-family:'Orbitron',monospace;font-size:52px;font-weight:900;color:#c0f0a0;letter-spacing:4px;animation:winPulse 1.6s ease-in-out infinite;">SUSTAINED</h1>
+  <div style="font-family:'Orbitron',monospace;font-size:20px;color:#90d870;letter-spacing:2px;margin-top:6px;">300 CLICKS REACHED</div>
+  <p style="font-size:14px;color:#7090a0;letter-spacing:1px;font-style:italic;max-width:320px;text-align:center;margin-top:12px;">The object has achieved autopoiesis. It lives on through your will.</p>
+  <button id="restart-btn" onclick="retryGame()" style="margin-top:24px;">↺ PLAY AGAIN</button>
+</div>
+<div id="event-panel">
+  <div id="panel-label">EVENTS</div>
+
+  <!-- Energy Surge -->
+  <div class="ev-tile" id="ev-surge">
+    <svg width="80" height="64" viewBox="0 0 80 64" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="40" cy="32" r="28" fill="none" stroke="rgba(255,180,60,0.18)" stroke-width="1"/>
+      <circle cx="40" cy="32" r="20" fill="none" stroke="rgba(255,180,60,0.25)" stroke-width="0.8"/>
+      <circle id="surge-core" cx="40" cy="32" r="10" fill="rgba(200,120,20,0.5)" stroke="rgba(255,200,80,0.7)" stroke-width="1.2"/>
+      <g id="surge-rays">
+        <line x1="40" y1="4"  x2="40" y2="14" stroke="rgba(255,200,80,0.8)" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="40" y1="50" x2="40" y2="60" stroke="rgba(255,200,80,0.8)" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="8"  y1="32" x2="18" y2="32" stroke="rgba(255,200,80,0.8)" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="62" y1="32" x2="72" y2="32" stroke="rgba(255,200,80,0.8)" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="14" y1="10" x2="21" y2="17" stroke="rgba(255,200,80,0.6)" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="59" y1="55" x2="66" y2="62" stroke="rgba(255,200,80,0.6)" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="66" y1="10" x2="59" y2="17" stroke="rgba(255,200,80,0.6)" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="21" y1="55" x2="14" y2="62" stroke="rgba(255,200,80,0.6)" stroke-width="1.2" stroke-linecap="round"/>
+      </g>
+    </svg>
+    <div class="ev-tile-label">Energy<br>Surge</div>
+  </div>
+
+  <!-- Stabilizing Pulse -->
+  <div class="ev-tile" id="ev-pulse">
+    <svg width="80" height="64" viewBox="0 0 80 64" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="40" cy="32" r="26" fill="none" stroke="rgba(80,220,160,0.15)" stroke-width="1"/>
+      <circle cx="40" cy="32" r="18" fill="none" stroke="rgba(80,220,160,0.22)" stroke-width="0.8"/>
+      <circle cx="40" cy="32" r="10" fill="rgba(20,140,90,0.4)" stroke="rgba(80,220,160,0.7)" stroke-width="1.2"/>
+      <polyline id="pulse-wave" points="4,32 14,32 18,18 23,46 28,24 33,40 40,32 47,32 52,22 57,42 62,32 72,32 76,32" fill="none" stroke="rgba(80,220,160,0.85)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="ev-tile-label">Stabilizing<br>Pulse</div>
+  </div>
+
+  <!-- Glitch Wave -->
+  <div class="ev-tile" id="ev-glitch">
+    <svg width="80" height="64" viewBox="0 0 80 64" xmlns="http://www.w3.org/2000/svg">
+      <rect x="8" y="12" width="64" height="40" rx="3" fill="rgba(120,60,220,0.2)" stroke="rgba(180,120,255,0.3)" stroke-width="0.8"/>
+      <g id="glitch-bars">
+        <rect x="8"  y="16" width="40" height="5" rx="1" fill="rgba(200,150,255,0.5)"/>
+        <rect x="30" y="24" width="42" height="4" rx="1" fill="rgba(200,150,255,0.35)"/>
+        <rect x="8"  y="31" width="28" height="4" rx="1" fill="rgba(200,150,255,0.45)"/>
+        <rect x="20" y="38" width="52" height="5" rx="1" fill="rgba(200,150,255,0.3)"/>
+        <rect x="8"  y="46" width="36" height="4" rx="1" fill="rgba(200,150,255,0.4)"/>
+      </g>
+      <rect x="52" y="16" width="6" height="5"  rx="1" fill="rgba(255,80,80,0.7)"/>
+      <rect x="8"  y="24" width="6" height="4"  rx="1" fill="rgba(80,200,255,0.7)"/>
+      <rect x="36" y="38" width="8" height="5"  rx="1" fill="rgba(255,80,80,0.6)"/>
+    </svg>
+    <div class="ev-tile-label">Glitch<br>Wave</div>
+  </div>
+
+  <!-- Entropy Spike -->
+  <div class="ev-tile" id="ev-entropy">
+    <svg width="80" height="64" viewBox="0 0 80 64" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="40" cy="32" r="26" fill="none" stroke="rgba(220,60,60,0.2)" stroke-width="1"/>
+      <g id="entropy-frags">
+        <polygon points="40,8 48,26 40,22" fill="rgba(200,60,60,0.5)" stroke="rgba(255,100,100,0.6)" stroke-width="0.8"/>
+        <polygon points="40,8 32,26 40,22" fill="rgba(180,40,40,0.4)" stroke="rgba(255,100,100,0.5)" stroke-width="0.8"/>
+        <polygon points="62,44 44,36 52,30" fill="rgba(200,60,60,0.45)" stroke="rgba(255,100,100,0.55)" stroke-width="0.8"/>
+        <polygon points="18,44 36,36 28,30" fill="rgba(180,40,40,0.4)" stroke="rgba(255,100,100,0.5)" stroke-width="0.8"/>
+        <polygon points="18,44 62,44 40,56" fill="rgba(160,30,30,0.35)" stroke="rgba(255,100,100,0.45)" stroke-width="0.8"/>
+      </g>
+      <circle cx="40" cy="32" r="5" fill="rgba(255,60,60,0.6)" stroke="rgba(255,140,140,0.8)" stroke-width="1"/>
+    </svg>
+    <div class="ev-tile-label">Entropy<br>Spike</div>
+  </div>
+
+  <!-- Resonance Peak -->
+  <div class="ev-tile" id="ev-resonance">
+    <svg width="80" height="64" viewBox="0 0 80 64" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="40" cy="32" r="26" fill="none" stroke="rgba(100,180,255,0.15)" stroke-width="1"/>
+      <circle cx="40" cy="32" r="18" fill="none" stroke="rgba(100,180,255,0.22)" stroke-width="0.8"/>
+      <circle cx="40" cy="32" r="10" fill="none" stroke="rgba(100,180,255,0.35)" stroke-width="0.8"/>
+      <circle id="res-core" cx="40" cy="32" r="5" fill="rgba(60,140,255,0.6)" stroke="rgba(160,210,255,0.8)" stroke-width="1"/>
+      <g id="res-rings">
+        <circle cx="40" cy="32" r="22" fill="none" stroke="rgba(100,180,255,0.5)" stroke-width="1" stroke-dasharray="4 3"/>
+        <circle cx="40" cy="32" r="28" fill="none" stroke="rgba(100,180,255,0.25)" stroke-width="0.8" stroke-dasharray="3 4"/>
+      </g>
+    </svg>
+    <div class="ev-tile-label">Resonance<br>Peak</div>
+  </div>
+</div>
+
+<!-- EVENT BANNER -->
+<div id="event-banner"></div>
+
+<script>
+// Stars
+(function() {
+  const c = document.getElementById('stars-canvas');
+  const ctx = c.getContext('2d');
+  function resize() { c.width = innerWidth; c.height = innerHeight; drawStars(); }
+  function drawStars() {
+    ctx.clearRect(0,0,c.width,c.height);
+    for (let i = 0; i < 200; i++) {
+      const x = Math.random() * c.width;
+      const y = Math.random() * c.height;
+      const r = Math.random() * 1.2;
+      const a = Math.random() * 0.8 + 0.1;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(200,180,255,${a})`;
+      ctx.fill();
+    }
+  }
+  window.addEventListener('resize', resize);
+  resize();
+})();
+
+// Game state
+let health = 100;
+let clicks = 0;
+let decayInterval = null;
+let glitchTimeout = null;
+let eventTimeout = null;
+let gameOver = false;
+let decayRate = 7.0; // health lost per second
+let lastEventAt = 0;
+let orbitAngle = 0;
+let orbitFrame = null;
+
+const events = [
+  { msg: "⚠ ENERGY SURGE — Click faster!", cardId: "ev-surge", effect: () => { decayRate *= 2.2; setTimeout(() => decayRate /= 2.2, 5000); } },
+  { msg: "✦ STABILIZING PULSE — Gain +15 integrity", cardId: "ev-pulse", effect: () => { health = Math.min(100, health + 15); updateHealthBar(); } },
+  { msg: "⚡ GLITCH WAVE — Stay focused!", cardId: "ev-glitch", effect: () => triggerGlitch() },
+  { msg: "↯ ENTROPY SPIKE — -10 integrity", cardId: "ev-entropy", effect: () => { health = Math.max(0, health - 10); updateHealthBar(); } },
+  { msg: "◈ RESONANCE PEAK — Double clicks for 5s", cardId: "ev-resonance", effect: () => { /* bonus handled in click */ } },
+];
+
+function startGame() {
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('game-screen').style.display = 'flex';
+  document.getElementById('event-panel').style.display = 'flex';
+  health = 100;
+  clicks = 0;
+  decayRate = 7.0;
+  gameOver = false;
+  lastEventAt = Date.now();
+  updateHealthBar();
+  updateClickDisplay();
+
+  decayInterval = setInterval(() => {
+    if (gameOver) return;
+    health -= decayRate / 10;
+    if (health <= 0) { health = 0; endGame(); return; }
+    updateHealthBar();
+    maybeTriggerEvent();
+  }, 100);
+
+  animateOrbit();
+}
+
+function handleClick(e) {
+  if (gameOver) return;
+  clicks++;
+  health = Math.min(100, health + 1.8);
+  updateHealthBar();
+  updateClickDisplay();
+  spawnParticle(e.clientX, e.clientY);
+
+  // Status messages
+  const msgs = [
+    "The object pulses with energy...",
+    "Keep clicking — it needs you!",
+    "Integrity stabilizing...",
+    "The signal is strengthening...",
+    "You feel the object respond...",
+    "Autopoiesis active.",
+    "Sustaining presence detected.",
+  ];
+  if (clicks % 10 === 0 || clicks < 5) {
+    document.getElementById('status-msg').textContent = msgs[Math.floor(Math.random() * msgs.length)];
+  }
+}
+
+function updateHealthBar() {
+  const pct = Math.max(0, Math.min(100, health));
+  document.getElementById('health-bar').style.width = pct + '%';
+  document.getElementById('health-pct').textContent = Math.round(pct) + '%';
+
+  const bar = document.getElementById('health-bar');
+  if (pct > 60) bar.style.background = 'linear-gradient(90deg,#7b45d8,#a070ff)';
+  else if (pct > 30) bar.style.background = 'linear-gradient(90deg,#b07020,#d09030)';
+  else bar.style.background = 'linear-gradient(90deg,#901818,#e04040)';
+
+  // Show cracks at low health
+  const cracks = document.getElementById('crack-group');
+  if (pct < 40) { cracks.style.opacity = ((40 - pct) / 40).toFixed(2); }
+  else { cracks.style.opacity = 0; }
+
+  // Body color shifts
+  const body = document.getElementById('obj-body');
+  if (pct > 60) body.setAttribute('fill', 'rgba(60,30,120,0.7)');
+  else if (pct > 30) body.setAttribute('fill', 'rgba(80,40,20,0.7)');
+  else body.setAttribute('fill', 'rgba(80,15,15,0.75)');
+
+  updateContinuousGlitch(pct);
+}
+
+function updateClickDisplay() {
+  document.getElementById('click-count').innerHTML = `${clicks}<small>CLICKS / 300</small>`;
+  const prog = document.getElementById('goal-bar');
+  if (prog) prog.style.width = Math.min(100, (clicks / 300) * 100) + '%';
+  if (clicks >= 300 && !gameOver) winGame();
+}
+
+function spawnParticle(x, y) {
+  const p = document.createElement('div');
+  p.className = 'particle';
+  p.textContent = '+';
+  p.style.left = (x + (Math.random() * 30 - 15)) + 'px';
+  p.style.top = (y - 10) + 'px';
+  document.body.appendChild(p);
+  setTimeout(() => p.remove(), 750);
+}
+
+function maybeTriggerEvent() {
+  const now = Date.now();
+  if (now - lastEventAt > (4000 + Math.random() * 3000)) {
+    lastEventAt = now;
+    const ev = events[Math.floor(Math.random() * events.length)];
+    showEventBanner(ev.msg, ev.cardId);
+    ev.effect();
+  }
+}
+
+function showEventBanner(msg, cardId) {
+  const banner = document.getElementById('event-banner');
+  banner.textContent = msg;
+  banner.style.display = 'block';
+  clearTimeout(eventTimeout);
+  eventTimeout = setTimeout(() => { banner.style.display = 'none'; }, 3500);
+
+  if (cardId) {
+    const card = document.getElementById(cardId);
+    if (card) {
+      document.querySelectorAll('.ev-tile').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      setTimeout(() => card.classList.remove('active'), 3500);
+    }
+  }
+}
+
+function retryGame() {
+  document.getElementById('gameover-screen').style.display = 'none';
+  document.getElementById('winscreen').style.display = 'none';
+  document.querySelectorAll('.ev-tile').forEach(c => c.classList.remove('active'));
+  stopContinuousGlitch();
+  glitchLoop = null;
+  startGame();
+}
+
+let glitchLoop = null;
+let glitchIntensity = 0;
+
+function triggerGlitch() {
+  // One-shot event glitch — sharp burst
+  document.body.style.filter = 'hue-rotate(180deg) contrast(1.8) saturate(2)';
+  setTimeout(() => { document.body.style.filter = ''; }, 150);
+  setTimeout(() => {
+    document.body.style.filter = 'hue-rotate(270deg) brightness(1.5)';
+    drawGlitchBars(0.9);
+    setTimeout(() => { document.body.style.filter = ''; clearGlitchBars(); }, 180);
+  }, 300);
+  setTimeout(() => {
+    document.body.style.filter = 'hue-rotate(90deg) contrast(1.4)';
+    drawGlitchBars(0.6);
+    setTimeout(() => { document.body.style.filter = ''; clearGlitchBars(); }, 120);
+  }, 560);
+}
+
+function drawGlitchBars(intensity) {
+  const canvas = document.getElementById('glitch-canvas');
+  if (!canvas) return;
+  canvas.style.display = 'block';
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const bars = Math.floor(intensity * 12) + 2;
+  for (let i = 0; i < bars; i++) {
+    const y = Math.random() * canvas.height;
+    const h = Math.random() * 18 + 2;
+    const w = Math.random() * canvas.width * 0.7 + canvas.width * 0.1;
+    const x = Math.random() * (canvas.width - w);
+    const r = Math.random();
+    if (r < 0.33) ctx.fillStyle = `rgba(255,0,80,${intensity * 0.35})`;
+    else if (r < 0.66) ctx.fillStyle = `rgba(0,200,255,${intensity * 0.3})`;
+    else ctx.fillStyle = `rgba(255,255,255,${intensity * 0.15})`;
+    ctx.fillRect(x, y, w, h);
+  }
+}
+
+function clearGlitchBars() {
+  const canvas = document.getElementById('glitch-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  canvas.style.display = 'none';
+}
+
+function startContinuousGlitch(intensity) {
+  glitchIntensity = intensity;
+  if (glitchLoop) return;
+  glitchLoop = setInterval(() => {
+    if (gameOver) { stopContinuousGlitch(); return; }
+    const roll = Math.random();
+    // Chance and severity scale with intensity
+    if (roll < glitchIntensity * 0.7) {
+      const dur = Math.random() * 80 + 40;
+      document.body.style.filter = `hue-rotate(${Math.random()*360}deg) contrast(${1 + glitchIntensity * 0.8})`;
+      drawGlitchBars(glitchIntensity);
+      setTimeout(() => {
+        if (!gameOver) document.body.style.filter = '';
+        clearGlitchBars();
+      }, dur);
+    }
+    // Occasional position shake on the object
+    if (roll < glitchIntensity * 0.4) {
+      const wrap = document.getElementById('object-wrap');
+      const ox = (Math.random() - 0.5) * glitchIntensity * 18;
+      const oy = (Math.random() - 0.5) * glitchIntensity * 12;
+      wrap.style.transform = `translate(${ox}px,${oy}px)`;
+      setTimeout(() => { wrap.style.transform = ''; }, 100);
+    }
+  }, Math.max(120, 600 - glitchIntensity * 500));
+}
+
+function stopContinuousGlitch() {
+  if (glitchLoop) { clearInterval(glitchLoop); glitchLoop = null; }
+  document.body.style.filter = '';
+  clearGlitchBars();
+  const wrap = document.getElementById('object-wrap');
+  if (wrap) wrap.style.transform = '';
+}
+
+function updateContinuousGlitch(healthPct) {
+  if (healthPct <= 30 && !gameOver) {
+    const intensity = (30 - healthPct) / 30; // 0 at 30%, 1 at 0%
+    if (!glitchLoop) {
+      startContinuousGlitch(intensity);
+    } else {
+      glitchIntensity = intensity;
+      // Re-schedule with new interval speed
+      clearInterval(glitchLoop);
+      glitchLoop = null;
+      startContinuousGlitch(intensity);
+    }
+  } else {
+    stopContinuousGlitch();
+  }
+}
+
+function animateOrbit() {
+  if (gameOver) return;
+  orbitAngle += 0.015;
+  const dots = document.getElementById('orbit-dots');
+  const r = 108;
+  const cx = 120, cy = 120;
+  const positions = [0, Math.PI/2, Math.PI, 3*Math.PI/2];
+  const sizes = [3, 2, 2.5, 2];
+  const opacities = [0.7, 0.5, 0.6, 0.4];
+  let html = '';
+  positions.forEach((offset, i) => {
+    const a = orbitAngle + offset;
+    const x = cx + r * Math.cos(a);
+    const y = cy + r * Math.sin(a);
+    html += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${sizes[i]}" fill="rgba(180,140,255,${opacities[i]})"/>`;
+  });
+  dots.innerHTML = html;
+  orbitFrame = requestAnimationFrame(animateOrbit);
+}
+
+function winGame() {
+  gameOver = true;
+  clearInterval(decayInterval);
+  cancelAnimationFrame(orbitFrame);
+  stopContinuousGlitch();
+  document.getElementById('game-screen').style.display = 'none';
+  document.getElementById('event-panel').style.display = 'none';
+  document.getElementById('winscreen').style.display = 'flex';
+}
+
+function endGame() {
+  gameOver = true;
+  clearInterval(decayInterval);
+  cancelAnimationFrame(orbitFrame);
+  stopContinuousGlitch();
+  document.getElementById('game-screen').style.display = 'none';
+  document.getElementById('event-panel').style.display = 'none';
+  const go = document.getElementById('gameover-screen');
+  go.style.display = 'flex';
+  document.getElementById('final-score').textContent = `${clicks} / 300 clicks`;
+}
+</script>
+</body>
+</html>
